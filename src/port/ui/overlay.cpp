@@ -144,7 +144,7 @@ namespace {
         append(row, "span")->SetInnerRML(kMenuNotificationPrefix);
         auto *icon = append(row, "icon");
         icon->SetClass("controller", true);
-        append(row, "span")->SetInnerRML(escape(back_button_name()));
+        append(row, "span")->SetInnerRML(escape(back_button_name() + " + Start"));
         append(row, "span")->SetInnerRML("to open menu");
 
         return elem;

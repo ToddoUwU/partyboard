@@ -14,6 +14,9 @@
 #define EXEC_KILLED 3
 
 #ifdef TARGET_PC
+#define PC_PROCESS_MIN_STACK (512 * 1024)
+#endif
+#ifdef TARGET_PC
 static cothread_t processthread;
 static u8 thread_arg;
 #else
@@ -77,7 +80,15 @@ Process *HuPrcCreate(void (*func)(void), u16 prio, u32 stack_size, s32 extra_siz
         stack_size = 2048;
     }
 #ifdef TARGET_PC
+    // GameCube-sized stacks (even doubled) are far too small for 64-bit code that calls into aurora's C++ card
+    // code, stdio and fmt logging from inside a process (e.g. creating/writing the memory card save). Overflowing
+    // one silently corrupts the malloc header below it and co_delete's free() aborts later ("munmap_chunk():
+    // invalid pointer"). Give every process a desktop-sized stack, like the OS threads Dusklight uses; glibc
+    // mmaps blocks this large, so untouched pages cost nothing.
     stack_size *= 2;
+    if (stack_size < PC_PROCESS_MIN_STACK) {
+        stack_size = PC_PROCESS_MIN_STACK;
+    }
     alloc_size = HuMemMemoryAllocSizeGet(sizeof(Process)) + HuMemMemoryAllocSizeGet(extra_size);
 #else
     alloc_size = HuMemMemoryAllocSizeGet(sizeof(Process)) + HuMemMemoryAllocSizeGet(stack_size) + HuMemMemoryAllocSizeGet(extra_size);

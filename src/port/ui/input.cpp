@@ -337,8 +337,17 @@ namespace {
     Rml::Input::KeyIdentifier map_gamepad_button(const SDL_GamepadButtonEvent &event) noexcept
     {
         const auto nativeButton = static_cast<SDL_GamepadButton>(event.button);
-        if (nativeButton == SDL_GAMEPAD_BUTTON_BACK) {
-            return Rml::Input::KI_F1;
+        // Back alone is GameCube Start in game (see PadReadVSync): over Moonlight some controllers' Start arrives as
+        // Back. The menu opens with Back + Start pressed together (either order), R + Start, or F1.
+        if (nativeButton == SDL_GAMEPAD_BUTTON_BACK || nativeButton == SDL_GAMEPAD_BUTTON_START) {
+            SDL_Gamepad *gamepad = SDL_GetGamepadFromID(event.which);
+            const auto other = nativeButton == SDL_GAMEPAD_BUTTON_BACK ? SDL_GAMEPAD_BUTTON_START : SDL_GAMEPAD_BUTTON_BACK;
+            if (gamepad != nullptr && SDL_GetGamepadButton(gamepad, other)) {
+                return Rml::Input::KI_F1;
+            }
+            if (nativeButton == SDL_GAMEPAD_BUTTON_BACK) {
+                return Rml::Input::KI_UNKNOWN;
+            }
         }
 
         u32 port = 0;
@@ -674,6 +683,8 @@ namespace {
     }
 
 } // namespace
+
+extern "C" bool partyboard_ui_input_blocked(void) { return sPadInputBlocked; }
 
 void sync_input_block() noexcept
 {

@@ -4,6 +4,11 @@
 
 #ifndef __MWERKS__
 #include <stdlib.h>
+#ifdef TARGET_PC
+#include <SDL3/SDL_gamepad.h>
+#include <stdbool.h>
+bool partyboard_ui_input_blocked(void);
+#endif
 #endif
 
 typedef struct pad_rumble {
@@ -158,6 +163,20 @@ static void PadReadVSync(u32 retraceCount)
     PADStatus status[4];
     if(!HuDvdErrWait) {
         RumbleBit = PADRead(status);
+#ifdef TARGET_PC
+        // Over Moonlight some controllers' Start button arrives as Back/View; treat Back as GameCube Start too.
+        // (Back + Start together opens the Party Board menu instead; see map_gamepad_button.)
+        if (!partyboard_ui_input_blocked()) {
+            for (i = 0; i < 4; i++) {
+                const s32 index = PADGetIndexForPort(i);
+                SDL_Gamepad *gamepad = index >= 0 ? PADGetSDLGamepadForIndex((u32)index) : NULL;
+                if (gamepad != NULL && SDL_GetGamepadButton(gamepad, SDL_GAMEPAD_BUTTON_BACK)
+                    && !SDL_GetGamepadButton(gamepad, SDL_GAMEPAD_BUTTON_START)) {
+                    status[i].button |= PAD_BUTTON_START;
+                }
+            }
+        }
+#endif
         PADClamp(status);
         chan = 0;
         for(i=0; i<4; i++) {
