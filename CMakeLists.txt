@@ -385,7 +385,7 @@ aurora_install_runtime_dlls(partyboard ${CMAKE_INSTALL_PREFIX})
 
 # Linux: the presets build dependencies (absl, fmt, RmlUi, ...) as shared libs; bundle every one that
 # comes from the build tree next to the binary and point its RUNPATH at $ORIGIN
-if (UNIX AND NOT APPLE)
+if (UNIX AND NOT APPLE AND NOT ANDROID)
     set(_bundle_files "")
     foreach (target IN LISTS BINARY_TARGETS)
         list(APPEND _bundle_files "$<TARGET_FILE:${target}>")
