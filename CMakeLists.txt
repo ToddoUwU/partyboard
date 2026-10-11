@@ -383,6 +383,30 @@ endif ()
 install(TARGETS ${BINARY_TARGETS} ${EXTRA_TARGETS} DESTINATION ${CMAKE_INSTALL_PREFIX})
 aurora_install_runtime_dlls(partyboard ${CMAKE_INSTALL_PREFIX})
 
+# Linux: the presets build dependencies (absl, fmt, RmlUi, ...) as shared libs; bundle every one that
+# comes from the build tree next to the binary and point its RUNPATH at $ORIGIN
+if (UNIX AND NOT APPLE)
+    set(_bundle_files "")
+    foreach (target IN LISTS BINARY_TARGETS)
+        list(APPEND _bundle_files "$<TARGET_FILE:${target}>")
+    endforeach ()
+    install(CODE "
+        file(GET_RUNTIME_DEPENDENCIES
+            LIBRARIES ${_bundle_files}
+            RESOLVED_DEPENDENCIES_VAR _deps
+            POST_INCLUDE_REGEXES \"^${CMAKE_BINARY_DIR}/\"
+            POST_EXCLUDE_REGEXES \".*\")
+        foreach (_dep IN LISTS _deps)
+            get_filename_component(_name \"\${_dep}\" NAME)
+            if (NOT EXISTS \"${CMAKE_INSTALL_PREFIX}/\${_name}\")
+                message(STATUS \"Bundling: \${_name}\")
+                file(COPY_FILE \"\${_dep}\" \"${CMAKE_INSTALL_PREFIX}/\${_name}\")
+                file(RPATH_SET FILE \"${CMAKE_INSTALL_PREFIX}/\${_name}\" NEW_RPATH \"\\\$ORIGIN\")
+            endif ()
+        endforeach ()
+    ")
+endif ()
+
 if (NOT APPLE)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/res DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif ()
