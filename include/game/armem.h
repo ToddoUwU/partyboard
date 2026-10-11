@@ -2,6 +2,7 @@
 #define _GAME_ARMEM_H
 
 #include "dolphin.h"
+#include <dolphin/arq.h>
 #include "game/memory.h"
 #include "game/data.h"
 
