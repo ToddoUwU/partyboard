@@ -5,6 +5,7 @@
 
 #ifdef TARGET_PC
 #include "port/settings.h"
+#include <string.h>
 #endif
 
 static void *cardWork;
@@ -15,8 +16,16 @@ static void MountCallBack(s32 chan, s32 result);
 void HuCardInit(void)
 {
 #ifdef TARGET_PC
-        CARDSetLoadType(partyboard_settings_card_file_type());
-        CARDInit("Party Board", "mariopartyrd");
+        // aurora names the card image from the 4-char game code (GMPE -> MemoryCardA.USA.raw), so pass the
+        // loaded disc's real game/maker codes; anything else leaves the card path empty ("no memory card")
+        {
+            const DVDDiskID *id = DVDGetCurrentDiskID();
+            char game[5] = {0}, maker[3] = {0};
+            memcpy(game, id->gameName, 4);
+            memcpy(maker, id->company, 2);
+            CARDSetLoadType(partyboard_settings_card_file_type());
+            CARDInit(game, maker);
+        }
 #else
 	CARDInit();
 #endif

@@ -6,6 +6,7 @@
 
 #include "achievements.hpp"
 #include "aurora/rmlui.hpp"
+#include "port/main.h"
 #include "port/settings.h"
 #include "imgui.h"
 #include "modal.hpp"
@@ -110,7 +111,7 @@ MenuBar::MenuBar()
                             [dismiss](Modal& modal) {
                                 // mDoAud_seStartMenu(kSoundClick); // TODO PC
                                 dismiss(modal);
-                                // IsRunning = false; // TODO PC
+                                PartyBoard_IsRunning = false; // main loop exits and shuts down (as Dusklight)
                             },
                     },
                 },
